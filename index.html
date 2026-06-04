@@ -540,33 +540,32 @@ function runSimulation() {
     ctx.textAlign = 'right';
     ctx.fillText(`#${ladderPos}`, 520, 222);
 
-    // 3. Render the Team Squad Lineup Layout Blocks
+    // 3. Render the Team Squad Lineup Layout Blocks Dynamically
     let yPos = 300;
-    const positions = ['FB', 'CHB', 'C', 'CHF', 'FF'];
+    
+    // Create an ordered list of display labels to show on the left of the card
+    const positionLabels = ['FB', 'CHB', 'C', 'CHF', 'FF'];
+    let index = 0;
 
-    positions.forEach(pos => {
-        // Deep scan lookup: Check uppercase, lowercase, and common layout extensions
-        let player = myTeam[pos] || 
-                     myTeam[pos.toLowerCase()] || 
-                     myTeam[pos.toUpperCase()] ||
-                     myTeam[pos + 'Position'] ||
-                     myTeam['pos_' + pos.toLowerCase()];
-        
+    for (let key in myTeam) {
+        if (index >= 5) break; // Safety cap to fit the card layout
+
+        let player = myTeam[key];
         let pName = 'Empty Slot';
         let pRating = '??';
         let badgeColor = '#7f8c8d'; // Default fallback gray
 
         if (player) {
-            // Handle structured player objects versus raw strings
+            // Extract values whether it's an object or a plain text string
             if (typeof player === 'object') {
                 pName = player.name || 'Unknown Player';
                 pRating = player.rating || '??';
             } else {
-                pName = player; // It's a plain text string name
-                pRating = '85';  // Balanced default rating fallback
+                pName = player;
+                pRating = '85';
             }
             
-            // Apply bright tier color grading to matching rating badges
+            // Assign a high-impact tier color code to the rating badge
             let ratingNum = parseInt(pRating);
             if (!isNaN(ratingNum)) {
                 if (ratingNum >= 90) badgeColor = '#27ae60';      // Elite Green
@@ -575,24 +574,27 @@ function runSimulation() {
             }
         }
 
+        // Use our display label array fallback, or use the object key name itself
+        let labelText = positionLabels[index] || key.toUpperCase();
+
         // Draw position container strip row
         ctx.fillStyle = 'rgba(255,255,255,0.03)';
         ctx.fillRect(50, yPos, 500, 65);
         ctx.strokeStyle = 'rgba(255,255,255,0.1)';
         ctx.strokeRect(50, yPos, 500, 65);
 
-        // Position Badge Label Text
+        // Position Badge Label Text (FB, CHB, etc.)
         ctx.fillStyle = '#f39c12';
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(pos.toUpperCase(), 75, yPos + 40);
+        ctx.fillText(labelText, 75, yPos + 40);
 
         // Player Name Text
         ctx.fillStyle = '#ffffff';
         ctx.font = '18px sans-serif';
         ctx.fillText(pName, 160, yPos + 38);
 
-        // Dynamic Rating Pill Indicator Badge (Uses safe rect layout)
+        // Dynamic Rating Pill Indicator Badge
         ctx.fillStyle = badgeColor;
         ctx.beginPath();
         ctx.rect(460, yPos + 17, 65, 32);
@@ -604,7 +606,8 @@ function runSimulation() {
         ctx.fillText(pRating, 492, yPos + 40);
 
         yPos += 80; // Slide down row spacing pointer
-    });
+        index++;
+    }
 
     // 4. Branding Footer Stamp & Live URL Watermark
     ctx.fillStyle = '#555';
