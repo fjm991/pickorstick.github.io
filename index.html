@@ -506,6 +506,9 @@ function runSimulation() {
     const resultsEl = document.getElementById('results');
     resultsEl.innerHTML = outputHtml;
     resultsEl.style.display = "block";
+} // This closes the runSimulation function cleanly!
+</script>
+
 <!-- Hidden YouTube Background Player -->
 <div id="youtube-audio-player" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; overflow: hidden;"></div>
 
@@ -546,6 +549,7 @@ function onPlayerReady(event) {
             player.playVideo();
         }
     }, { once: true });
+} // This closing bracket was missing!
 </script>
 </body>
 </html>
