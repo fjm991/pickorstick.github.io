@@ -543,13 +543,13 @@ function runSimulation() {
     // 3. Render the Team Squad Lineup Layout Blocks Dynamically
     let yPos = 300;
     
-    // These match your HTML IDs exactly to pull data straight from the screen
+    // Maps traditional card layout positions to their matching on-field HTML element IDs
     const draftPositions = [
-        { id: 'Key Fwd', display: 'KEY FWD' },
-        { id: 'Outside Mid', display: 'OUT MID' },
-        { id: 'Ruck', display: 'RUCK' },
-        { id: 'Inside Mid', display: 'IN MID' },
-        { id: 'Key Def', display: 'KEY DEF' }
+        { id: 'Key Def', display: 'FB' },
+        { id: 'Inside Mid', display: 'CHB' },
+        { id: 'Ruck', display: 'C' },
+        { id: 'Outside Mid', display: 'CHF' },
+        { id: 'Key Fwd', display: 'FF' }
     ];
 
     draftPositions.forEach(pos => {
@@ -557,7 +557,7 @@ function runSimulation() {
         let pRating = '85'; // Default rating if individual tracking isn't found
         let badgeColor = '#f1c40f'; // Default gold badge color
 
-        // Pull the live text right out of your HTML slots!
+        // Pull the live text right out of your exact HTML element IDs
         const nameElement = document.getElementById(`player-${pos.id}`);
         const infoElement = document.getElementById(`info-${pos.id}`);
 
@@ -598,16 +598,16 @@ function runSimulation() {
         ctx.strokeStyle = 'rgba(255,255,255,0.1)';
         ctx.strokeRect(50, yPos, 500, 65);
 
-        // Position Badge Label Text (KEY FWD, RUCK, etc.)
+        // Position Badge Label Text (FB, CHB, C, CHF, FF)
         ctx.fillStyle = '#f39c12';
-        ctx.font = 'bold 18px sans-serif';
+        ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(pos.display, 70, yPos + 40);
+        ctx.fillText(pos.display, 75, yPos + 40);
 
         // Player Name Text
         ctx.fillStyle = '#ffffff';
         ctx.font = '18px sans-serif';
-        ctx.fillText(pName, 185, yPos + 38);
+        ctx.fillText(pName, 160, yPos + 38);
 
         // Dynamic Rating Pill Indicator Badge
         ctx.fillStyle = badgeColor;
