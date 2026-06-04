@@ -669,6 +669,10 @@ function runSimulation() {
     resultsEl.style.display = "block";
 } // Closes the runSimulation function cleanly
 </script>
+<!-- Hidden YouTube Background Player Container -->
+<div id="youtube-audio-player" style="width: 0px; height: 0px; opacity: 0; pointer-events: none; overflow: hidden;"></div>
+
+<script>
 // Load the official YouTube Iframe Player API
 var tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
@@ -687,22 +691,31 @@ function onYouTubeIframeAPIReady() {
             'playlist': '8GcBGhV047A',
             'controls': 0,
             'showinfo': 0,
-            'rel': 0
+            'rel': 0,
+            'mute': 0
         },
         events: {
-            'onReady': onPlayerReady
+            'onReady': onPlayerReady,
+            'onError': onPlayerError
         }
     });
 }
 
 function onPlayerReady(event) {
+    // Set standard atmospheric background music volume
     event.target.setVolume(25);
     
+    // Modern browsers block music until a user clicks anywhere on the page
     document.addEventListener('click', function() {
         if (player && typeof player.playVideo === 'function') {
             player.playVideo();
+            console.log("YouTube Background Audio Playing successfully!");
         }
     }, { once: true });
+}
+
+function onPlayerError(event) {
+    console.error("YouTube API Player Error Code: " + event.data);
 }
 </script>
 </body>
