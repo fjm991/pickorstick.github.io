@@ -545,19 +545,34 @@ function runSimulation() {
     const positions = ['FB', 'CHB', 'C', 'CHF', 'FF'];
 
     positions.forEach(pos => {
-        let player = myTeam[pos] || myTeam[pos.toLowerCase()];
+        // Deep scan lookup: Check uppercase, lowercase, and common layout extensions
+        let player = myTeam[pos] || 
+                     myTeam[pos.toLowerCase()] || 
+                     myTeam[pos.toUpperCase()] ||
+                     myTeam[pos + 'Position'] ||
+                     myTeam['pos_' + pos.toLowerCase()];
+        
         let pName = 'Empty Slot';
         let pRating = '??';
         let badgeColor = '#7f8c8d'; // Default fallback gray
 
         if (player) {
-            pName = player.name ? player.name : player;
-            pRating = player.rating ? player.rating : '??';
+            // Handle structured player objects versus raw strings
+            if (typeof player === 'object') {
+                pName = player.name || 'Unknown Player';
+                pRating = player.rating || '??';
+            } else {
+                pName = player; // It's a plain text string name
+                pRating = '85';  // Balanced default rating fallback
+            }
             
-            // Set dynamic pill badge colors based on ratings
-            if (pRating >= 90) badgeColor = '#27ae60';      // Elite Green
-            else if (pRating >= 80) badgeColor = '#f1c40f'; // Great Gold
-            else if (pRating >= 70) badgeColor = '#e67e22'; // Solid Orange
+            // Apply bright tier color grading to matching rating badges
+            let ratingNum = parseInt(pRating);
+            if (!isNaN(ratingNum)) {
+                if (ratingNum >= 90) badgeColor = '#27ae60';      // Elite Green
+                else if (ratingNum >= 80) badgeColor = '#f1c40f'; // Great Gold
+                else if (ratingNum >= 70) badgeColor = '#e67e22'; // Solid Orange
+            }
         }
 
         // Draw position container strip row
@@ -577,10 +592,10 @@ function runSimulation() {
         ctx.font = '18px sans-serif';
         ctx.fillText(pName, 160, yPos + 38);
 
-        // Dynamic Rating Pill Indicator Badge
+        // Dynamic Rating Pill Indicator Badge (Uses safe rect layout)
         ctx.fillStyle = badgeColor;
         ctx.beginPath();
-        ctx.roundRect(460, yPos + 17, 65, 32, 6);
+        ctx.rect(460, yPos + 17, 65, 32);
         ctx.fill();
 
         ctx.fillStyle = '#000000';
