@@ -492,12 +492,26 @@ function runSimulation() {
         outputHtml += `<p class="loss-text">❌ MISSED THE FINALS. Lower squad depth dragged you down. Spin again to build a sturdier spine!</p>`;
     }
 
-    // Injected WhatsApp and Twitter Share Container right into the results screen
+    // 1. Build the dynamic text-based sharing card values from live gameplay data
+    let shareText = `🏉 MY AFL SPINE TEAM RESULTS 🏉\n\n`;
+    shareText += `📊 Final Record: ${wins} Wins - ${losses} Losses\n`;
+    shareText += `🏆 Ladder Rank: #${ladderPos}\n\n`;
+    shareText += `📋 THE SPINE SQUAD:\n`;
+    shareText += `🔹 FB: ${myTeam.FB ? myTeam.FB.name : 'Empty'} (${myTeam.FB ? myTeam.FB.rating : '?'})\n`;
+    shareText += `🔹 CHB: ${myTeam.CHB ? myTeam.CHB.name : 'Empty'} (${myTeam.CHB ? myTeam.CHB.rating : '?'})\n`;
+    shareText += `🔹 C: ${myTeam.C ? myTeam.C.name : 'Empty'} (${myTeam.C ? myTeam.C.rating : '?'})\n`;
+    shareText += `🔹 CHF: ${myTeam.CHF ? myTeam.CHF.name : 'Empty'} (${myTeam.CHF ? myTeam.CHF.rating : '?'})\n`;
+    shareText += `🔹 FF: ${myTeam.FF ? myTeam.FF.name : 'Empty'} (${myTeam.FF ? myTeam.FF.rating : '?'})\n\n`;
+    shareText += `Can you draft a better spine? Play Pick or Stick!`;
+
+    // 2. Inject the dynamic copy interface HTML
     outputHtml += `
-    <div class="share-container" style="margin: 18px 0; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; border: 1px dashed #444;">
-        <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: #f39c12;">📢 SHARE YOUR SPINE TEAM!</p>
-        <a href="https://twitter.com/intent/tweet?text=I%20just%20drafted%20my%20ultimate%20AFL%20Spine%20Team%20in%20Pick%20or%20Stick!%20Can%20you%20beat%20my%20score?%20Play%20now!" target="_blank" style="display: inline-block; padding: 10px 18px; margin: 5px; font-size: 13px; font-weight: bold; color: #fff; text-decoration: none; border-radius: 5px; background-color: #1da1f2;">📱 Share on X / Twitter</a>
-        <a href="https://api.whatsapp.com/send?text=I%20just%20drafted%20my%20ultimate%20AFL%20Spine%20Team%20in%20Pick%20or%20Stick!%20Can%20you%20beat%20my%20score?%20Play%20now!" target="_blank" style="display: inline-block; padding: 10px 18px; margin: 5px; font-size: 13px; font-weight: bold; color: #fff; text-decoration: none; border-radius: 5px; background-color: #25d366;">💬 Share on WhatsApp</a>
+    <div class="share-container" style="margin: 18px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; border: 1px dashed #f39c12;">
+        <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: #f39c12;">📢 SHARE YOUR RESULTS</p>
+        <button id="copy-share-btn" onclick="navigator.clipboard.writeText(\`${shareText.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`); this.innerText='📋 Copied to Clipboard!'; this.style.backgroundColor='#27ae60';" style="display: inline-block; padding: 12px 20px; font-size: 13px; font-weight: bold; color: #fff; background-color: #e67e22; border: none; border-radius: 5px; cursor: pointer; transition: background 0.2s; font-family: sans-serif;">
+            📋 Copy Team Results Card
+        </button>
+        <p style="margin: 8px 0 0 0; font-size: 11px; color: #aaa;">Copies a formatted lineup summary to paste directly into WhatsApp, X, or messages!</p>
     </div>
     `;
 
