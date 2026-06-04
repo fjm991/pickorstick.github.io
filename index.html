@@ -492,7 +492,17 @@ function runSimulation() {
         outputHtml += `<p class="loss-text">❌ MISSED THE FINALS. Lower squad depth dragged you down. Spin again to build a sturdier spine!</p>`;
     }
 
-// ==========================================
+The code looks mostly solid, but there is one critical syntax issue that is breaking both elements simultaneously: You have a lone closing script tag (</script>) right in the middle of your snippet, which is shutting down the script environment prematurely while JavaScript is still running.
+
+Because it cuts off mid-execution, your browser throws a severe syntax error. This breaks the screenshot canvas generator, blocks the code from reaching the results element, and stops the YouTube audio initialization dead in its tracks.
+
+Let's clean this up entirely. Below is the fully unified, single-block snippet.
+
+The Completed Code Unification
+Delete everything from your code starting at the // ========================================== line all the way down to the very end of your file (</html>), and replace it with this completely fixed block:
+
+JavaScript
+    // ==========================================
     // NEW SCREENSHOT & IMAGE PREVIEW SYSTEM
     // ==========================================
     
@@ -652,7 +662,6 @@ function runSimulation() {
     <div class="share-container" style="margin: 20px 0; padding: 18px; background: rgba(255,255,255,0.04); border-radius: 8px; text-align: center; border: 1px solid #444;">
         <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: bold; color: #f39c12; letter-spacing: 0.5px;">📸 YOUR SQUAD SCORECARD</p>
         
-        <!-- Live on-screen rendering display -->
         <img src="${imageURI}" alt="Scorecard Preview" style="max-width: 100%; width: 320px; height: auto; border-radius: 6px; box-shadow: 0 6px 12px rgba(0,0,0,0.4); border: 1px solid #333; margin-bottom: 15px;" />
         
         <br>
@@ -667,10 +676,10 @@ function runSimulation() {
     const resultsEl = document.getElementById('results');
     resultsEl.innerHTML = outputHtml;
     resultsEl.style.display = "block";
-} // Closes the runSimulation function cleanly
+} // Clean closing brace for the runSimulation function
 </script>
-<!-- Hidden YouTube Background Player Container -->
-<div id="youtube-audio-player" style="width: 0px; height: 0px; opacity: 0; pointer-events: none; overflow: hidden;"></div>
+
+<div id="youtube-audio-player" style="position: absolute; width: 200px; height: 200px; top: -9999px; left: -9999px; opacity: 0.01; overflow: hidden; pointer-events: none;"></div>
 
 <script>
 // Load the official YouTube Iframe Player API
@@ -682,8 +691,8 @@ firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 var player;
 function onYouTubeIframeAPIReady() {
     player = new YT.Player('youtube-audio-player', {
-        height: '0',
-        width: '0',
+        height: '200',
+        width: '200',
         videoId: '8GcBGhV047A',
         playerVars: {
             'autoplay': 0,
@@ -692,7 +701,7 @@ function onYouTubeIframeAPIReady() {
             'controls': 0,
             'showinfo': 0,
             'rel': 0,
-            'mute': 0
+            'disablekb': 1
         },
         events: {
             'onReady': onPlayerReady,
@@ -702,20 +711,20 @@ function onYouTubeIframeAPIReady() {
 }
 
 function onPlayerReady(event) {
-    // Set standard atmospheric background music volume
+    // Set low ambient volume for the atmospheric track
     event.target.setVolume(25);
     
-    // Modern browsers block music until a user clicks anywhere on the page
+    // Modern browsers require a user interaction click on the screen to boot up background audio
     document.addEventListener('click', function() {
         if (player && typeof player.playVideo === 'function') {
             player.playVideo();
-            console.log("YouTube Background Audio Playing successfully!");
+            console.log("YouTube Background Audio initialized!");
         }
     }, { once: true });
 }
 
 function onPlayerError(event) {
-    console.error("YouTube API Player Error Code: " + event.data);
+    console.error("YouTube Player API Exception State: " + event.data);
 }
 </script>
 </body>
