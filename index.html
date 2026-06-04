@@ -507,21 +507,47 @@ function runSimulation() {
     resultsEl.innerHTML = outputHtml;
     resultsEl.style.display = "block";
 }
-</script>
-    !-- Invisible Audio System using Millionaire Thinking Music -->
-<audio id="bg-music" loop preload="auto">
-    <source src="https://archive.org/download/WhoWantsToBeAMillionaire64kQuestionMusicOneHourLoop/Who%20Wants%20to%20Be%20a%20Millionaire%3F%20%2464%20000%20Question%20Music%20%28One-Hour%20Loop%29.mp3" type="audio/mpeg">
-</audio>
+<!-- Hidden YouTube Background Player -->
+<div id="youtube-audio-player" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <script>
-// Automatically triggers the music on the user's very first interaction (like clicking Roll)
-document.addEventListener('click', function() {
-    const music = document.getElementById('bg-music');
-    if (music && music.paused) {
-        music.volume = 0.20; // 20% volume so it stays atmospheric in the background
-        music.play().catch(err => console.log("Audio waiting for active input..."));
-    }
-}, { once: true }); // '{ once: true }' ensures this listener cleans itself up after the first click
+// Load the official YouTube Iframe Player API
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+var player;
+function onYouTubeIframeAPIReady() {
+    player = new YT.Player('youtube-audio-player', {
+        height: '0',
+        width: '0',
+        videoId: '8GcBGhV047A', // Your exact video ID
+        playerVars: {
+            'autoplay': 0,
+            'loop': 1,
+            'playlist': '8GcBGhV047A', // Required for looping to work on YouTube
+            'controls': 0,
+            'showinfo': 0,
+            'rel': 0
+        },
+        events: {
+            'onReady': onPlayerReady
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    // Set volume to 25% so it's a great atmospheric background drone
+    event.target.setVolume(25);
+    
+    // Play on the very first user click anywhere on the page
+    document.addEventListener('click', function() {
+        if (player && typeof player.playVideo === 'function') {
+            player.playVideo();
+        }
+    }, { once: true });
+}
 </script>
 </body>
 </html>
