@@ -492,26 +492,141 @@ function runSimulation() {
         outputHtml += `<p class="loss-text">❌ MISSED THE FINALS. Lower squad depth dragged you down. Spin again to build a sturdier spine!</p>`;
     }
 
-    // 1. Build the dynamic text-based sharing card values from live gameplay data
-    let shareText = `🏉 MY AFL SPINE TEAM RESULTS 🏉\n\n`;
-    shareText += `📊 Final Record: ${wins} Wins - ${losses} Losses\n`;
-    shareText += `🏆 Ladder Rank: #${ladderPos}\n\n`;
-    shareText += `📋 THE SPINE SQUAD:\n`;
-    shareText += `🔹 FB: ${myTeam.FB ? myTeam.FB.name : 'Empty'} (${myTeam.FB ? myTeam.FB.rating : '?'})\n`;
-    shareText += `🔹 CHB: ${myTeam.CHB ? myTeam.CHB.name : 'Empty'} (${myTeam.CHB ? myTeam.CHB.rating : '?'})\n`;
-    shareText += `🔹 C: ${myTeam.C ? myTeam.C.name : 'Empty'} (${myTeam.C ? myTeam.C.rating : '?'})\n`;
-    shareText += `🔹 CHF: ${myTeam.CHF ? myTeam.CHF.name : 'Empty'} (${myTeam.CHF ? myTeam.CHF.rating : '?'})\n`;
-    shareText += `🔹 FF: ${myTeam.FF ? myTeam.FF.name : 'Empty'} (${myTeam.FF ? myTeam.FF.rating : '?'})\n\n`;
-    shareText += `Can you draft a better spine? Play Pick or Stick!`;
+// ==========================================
+    // NEW SCREENSHOT & IMAGE PREVIEW SYSTEM
+    // ==========================================
+    
+    // Create an invisible canvas element to draw the visual scorecard image
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 750;
+    const ctx = canvas.getContext('2d');
 
-    // 2. Inject the dynamic copy interface HTML
+    // 1. Render the premium dark-themed card background canvas
+    ctx.fillStyle = '#0c160e'; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Decorative turf accent bar at top
+    ctx.fillStyle = '#27ae60'; 
+    ctx.fillRect(0, 0, canvas.width, 15);
+
+    // 2. Draw Header Text Elements
+    ctx.fillStyle = '#f39c12';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('AFL SPINE DRAFT RESULTS', canvas.width / 2, 60);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '22px sans-serif';
+    ctx.fillText(`${wins} WINS  -  ${losses} LOSSES`, canvas.width / 2, 110);
+
+    ctx.fillStyle = ladderPos <= 8 ? '#27ae60' : '#e74c3c';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(ladderPos <= 8 ? '🔥 MADE THE FINALS SERIES' : '❌ MISSED THE FINALS', canvas.width / 2, 145);
+
+    // Outer framing box for the ladder rank badge
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(50, 175, 500, 70);
+    ctx.strokeStyle = '#444';
+    ctx.strokeRect(50, 175, 500, 70);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Final Competition Ladder Rank:', 80, 218);
+    
+    ctx.fillStyle = '#f39c12';
+    ctx.font = 'bold 32px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`#${ladderPos}`, 520, 222);
+
+    // 3. Render the Team Squad Lineup Layout Blocks
+    let yPos = 300;
+    const positions = ['FB', 'CHB', 'C', 'CHF', 'FF'];
+
+    positions.forEach(pos => {
+        let player = myTeam[pos] || myTeam[pos.toLowerCase()];
+        let pName = 'Empty Slot';
+        let pRating = '??';
+        let badgeColor = '#7f8c8d'; // Default fallback gray
+
+        if (player) {
+            pName = player.name ? player.name : player;
+            pRating = player.rating ? player.rating : '??';
+            
+            // Set dynamic pill badge colors based on ratings
+            if (pRating >= 90) badgeColor = '#27ae60';      // Elite Green
+            else if (pRating >= 80) badgeColor = '#f1c40f'; // Great Gold
+            else if (pRating >= 70) badgeColor = '#e67e22'; // Solid Orange
+        }
+
+        // Draw position container strip row
+        ctx.fillStyle = 'rgba(255,255,255,0.03)';
+        ctx.fillRect(50, yPos, 500, 65);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.strokeRect(50, yPos, 500, 65);
+
+        // Position Badge Label Text
+        ctx.fillStyle = '#f39c12';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(pos.toUpperCase(), 75, yPos + 40);
+
+        // Player Name Text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '18px sans-serif';
+        ctx.fillText(pName, 160, yPos + 38);
+
+        // Dynamic Rating Pill Indicator Badge
+        ctx.fillStyle = badgeColor;
+        ctx.beginPath();
+        ctx.roundRect(460, yPos + 17, 65, 32, 6);
+        ctx.fill();
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(pRating, 492, yPos + 40);
+
+        yPos += 80; // Slide down row spacing pointer
+    });
+
+    // 4. Branding Footer Stamp & Live URL Watermark
+    ctx.fillStyle = '#555';
+    ctx.font = 'italic 12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Drafted on Pick or Stick: AFL Spine Edition', 50, 720);
+
+    ctx.fillStyle = '#27ae60'; 
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('fjm991.github.io/pickorstick.github.io/', 550, 720);
+
+    // Convert the memory canvas drawing into a shareable image file URL
+    const imageURI = canvas.toDataURL('image/png');
+
+    // Dynamic JavaScript Trigger Function for the Image Save Action
+    window.downloadDraftScreenshot = function() {
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.href = imageURI;
+        downloadAnchor.download = `AFL-Spine-Draft-Rank-${ladderPos}.png`;
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+    };
+
+    // 5. Inject the live preview and download interface HTML
     outputHtml += `
-    <div class="share-container" style="margin: 18px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; border: 1px dashed #f39c12;">
-        <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: #f39c12;">📢 SHARE YOUR RESULTS</p>
-        <button id="copy-share-btn" onclick="navigator.clipboard.writeText(\`${shareText.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`); this.innerText='📋 Copied to Clipboard!'; this.style.backgroundColor='#27ae60';" style="display: inline-block; padding: 12px 20px; font-size: 13px; font-weight: bold; color: #fff; background-color: #e67e22; border: none; border-radius: 5px; cursor: pointer; transition: background 0.2s; font-family: sans-serif;">
-            📋 Copy Team Results Card
+    <div class="share-container" style="margin: 20px 0; padding: 18px; background: rgba(255,255,255,0.04); border-radius: 8px; text-align: center; border: 1px solid #444;">
+        <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: bold; color: #f39c12; letter-spacing: 0.5px;">📸 YOUR SQUAD SCORECARD</p>
+        
+        <!-- Live on-screen rendering display -->
+        <img src="${imageURI}" alt="Scorecard Preview" style="max-width: 100%; width: 320px; height: auto; border-radius: 6px; box-shadow: 0 6px 12px rgba(0,0,0,0.4); border: 1px solid #333; margin-bottom: 15px;" />
+        
+        <br>
+        <button class="action-btn" onclick="window.downloadDraftScreenshot()" style="display: inline-block; padding: 12px 24px; font-size: 14px; font-weight: bold; color: #fff; background-color: #27ae60; border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-family: sans-serif;">
+            📥 Save Card Image to Device
         </button>
-        <p style="margin: 8px 0 0 0; font-size: 11px; color: #aaa;">Copies a formatted lineup summary to paste directly into WhatsApp, X, or messages!</p>
     </div>
     `;
 
@@ -520,7 +635,7 @@ function runSimulation() {
     const resultsEl = document.getElementById('results');
     resultsEl.innerHTML = outputHtml;
     resultsEl.style.display = "block";
-} // This closes the runSimulation function cleanly!
+} // Closes the runSimulation function cleanly
 </script>
 
 <!-- Hidden YouTube Background Player -->
@@ -554,16 +669,14 @@ function onYouTubeIframeAPIReady() {
 }
 
 function onPlayerReady(event) {
-    // Atmospheric volume level
     event.target.setVolume(25);
     
-    // Safely triggers music on the player's first interaction click
     document.addEventListener('click', function() {
         if (player && typeof player.playVideo === 'function') {
             player.playVideo();
         }
     }, { once: true });
-} // This closing bracket was missing!
+}
 </script>
 </body>
 </html>
