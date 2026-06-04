@@ -543,39 +543,54 @@ function runSimulation() {
     // 3. Render the Team Squad Lineup Layout Blocks Dynamically
     let yPos = 300;
     
-    // Create an ordered list of display labels to show on the left of the card
-    const positionLabels = ['FB', 'CHB', 'C', 'CHF', 'FF'];
-    let index = 0;
+    // These match your HTML IDs exactly to pull data straight from the screen
+    const draftPositions = [
+        { id: 'Key Fwd', display: 'KEY FWD' },
+        { id: 'Outside Mid', display: 'OUT MID' },
+        { id: 'Ruck', display: 'RUCK' },
+        { id: 'Inside Mid', display: 'IN MID' },
+        { id: 'Key Def', display: 'KEY DEF' }
+    ];
 
-    for (let key in myTeam) {
-        if (index >= 5) break; // Safety cap to fit the card layout
-
-        let player = myTeam[key];
+    draftPositions.forEach(pos => {
         let pName = 'Empty Slot';
-        let pRating = '??';
-        let badgeColor = '#7f8c8d'; // Default fallback gray
+        let pRating = '85'; // Default rating if individual tracking isn't found
+        let badgeColor = '#f1c40f'; // Default gold badge color
 
-        if (player) {
-            // Extract values whether it's an object or a plain text string
-            if (typeof player === 'object') {
-                pName = player.name || 'Unknown Player';
-                pRating = player.rating || '??';
-            } else {
-                pName = player;
-                pRating = '85';
-            }
+        // Pull the live text right out of your HTML slots!
+        const nameElement = document.getElementById(`player-${pos.id}`);
+        const infoElement = document.getElementById(`info-${pos.id}`);
+
+        if (nameElement && nameElement.textContent && nameElement.textContent !== '-') {
+            pName = nameElement.textContent;
             
-            // Assign a high-impact tier color code to the rating badge
-            let ratingNum = parseInt(pRating);
-            if (!isNaN(ratingNum)) {
-                if (ratingNum >= 90) badgeColor = '#27ae60';      // Elite Green
-                else if (ratingNum >= 80) badgeColor = '#f1c40f'; // Great Gold
-                else if (ratingNum >= 70) badgeColor = '#e67e22'; // Solid Orange
+            // Try to extract rating from info element if it contains text like "OVR: 88"
+            if (infoElement && infoElement.textContent) {
+                const match = infoElement.textContent.match(/\d+/);
+                if (match) {
+                    pRating = match[0];
+                }
+            }
+        } else {
+            // Check fallback variable if HTML reads empty
+            let fallbackPlayer = myTeam[pos.id] || myTeam[pos.id.toLowerCase()];
+            if (fallbackPlayer) {
+                if (typeof fallbackPlayer === 'object') {
+                    pName = fallbackPlayer.name || 'Unknown Player';
+                    pRating = fallbackPlayer.rating || '85';
+                } else {
+                    pName = fallbackPlayer;
+                }
             }
         }
 
-        // Use our display label array fallback, or use the object key name itself
-        let labelText = positionLabels[index] || key.toUpperCase();
+        // Color grade the badge depending on the rating number
+        let ratingNum = parseInt(pRating);
+        if (!isNaN(ratingNum)) {
+            if (ratingNum >= 90) badgeColor = '#27ae60';      // Elite Green
+            else if (ratingNum >= 80) badgeColor = '#f1c40f'; // Great Gold
+            else if (ratingNum >= 70) badgeColor = '#e67e22'; // Solid Orange
+        }
 
         // Draw position container strip row
         ctx.fillStyle = 'rgba(255,255,255,0.03)';
@@ -583,16 +598,16 @@ function runSimulation() {
         ctx.strokeStyle = 'rgba(255,255,255,0.1)';
         ctx.strokeRect(50, yPos, 500, 65);
 
-        // Position Badge Label Text (FB, CHB, etc.)
+        // Position Badge Label Text (KEY FWD, RUCK, etc.)
         ctx.fillStyle = '#f39c12';
-        ctx.font = 'bold 20px sans-serif';
+        ctx.font = 'bold 18px sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(labelText, 75, yPos + 40);
+        ctx.fillText(pos.display, 70, yPos + 40);
 
         // Player Name Text
         ctx.fillStyle = '#ffffff';
         ctx.font = '18px sans-serif';
-        ctx.fillText(pName, 160, yPos + 38);
+        ctx.fillText(pName, 185, yPos + 38);
 
         // Dynamic Rating Pill Indicator Badge
         ctx.fillStyle = badgeColor;
@@ -606,8 +621,7 @@ function runSimulation() {
         ctx.fillText(pRating, 492, yPos + 40);
 
         yPos += 80; // Slide down row spacing pointer
-        index++;
-    }
+    });
 
     // 4. Branding Footer Stamp & Live URL Watermark
     ctx.fillStyle = '#555';
@@ -655,11 +669,6 @@ function runSimulation() {
     resultsEl.style.display = "block";
 } // Closes the runSimulation function cleanly
 </script>
-
-<!-- Hidden YouTube Background Player -->
-<div id="youtube-audio-player" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; overflow: hidden;"></div>
-
-<script>
 // Load the official YouTube Iframe Player API
 var tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
