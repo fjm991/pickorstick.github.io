@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pick or Stick: AFL Spine Draft</title>
+    <style>
+        :root {
+            --theme-primary: #1e3a24;
+            --theme-secondary: #27ae60;
+            --theme-accent: #e67e22;
+            --theme-text: #ffffff;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #0c160e; 
+            color: #fff; 
+            text-align: center; 
+            padding: 10px; 
+            margin: 0;
+        }
+
+        .container { max-width: 600px; margin: 0 auto; background: rgba(25, 25, 25, 0.95); padding: 20px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.7); border: 1px solid #27ae60; }
+        h1 { color: #f39c12; margin: 5px 0; font-size: 38px; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); }
+        .subtitle { margin-top: 0; font-size: 13px; color: #bdc3c7; margin-bottom: 20px; }
+
+        /* FOOTBALL FIELD SPINE LAYOUT */
+        .field-container {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            height: 520px;
+            margin: 0 auto 25px auto;
+            background: #14351f;
+            border: 3px solid #ffffff;
+            border-radius: 50% / 15%;
+            overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .field-lines {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        .field-lines::before {
+            content: "";
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 110px; height: 110px;
+            border: 2px solid rgba(255,255,255,0.4);
+            transform: translate(-50%, -50%);
+        }
+        .arc-top {
+            position: absolute;
+            top: -70px; left: 50%; width: 260px; height: 200px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 50%; transform: translateX(-50%);
+        }
+        .arc-bottom {
+            position: absolute;
+            bottom: -70px; left: 50%; width: 260px; height: 200px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 50%; transform: translateX(-50%);
+        }
+
+        .spine-layout {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+
+        .slot { 
+            background: rgba(20, 40, 25, 0.85); 
+            width: 85%;
+            max-width: 260px;
+            padding: 8px 10px; 
+            border-radius: 6px; 
+            border: 2px dashed #ffffff; 
+            min-height: 52px; 
+            font-size: 11px; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            box-sizing: border-box;
+        }
+        .slot strong { display: block; margin-bottom: 3px; color: #f1c40f; font-size: 11px; letter-spacing: 1px; }
+        .slot.filled { border-style: solid; border-color: #2ecc71; background: rgba(26, 82, 53, 0.95); }
+        .player-name { font-weight: bold; color: #fff; font-size: 14px; }
+        .player-info { color: #bdc3c7; font-size: 10px; }
+        
+        .prompt-box { background: var(--theme-primary); border: 3px solid var(--theme-secondary); padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: all 0.4s ease; color: var(--theme-text); }
+        .prompt-box h3 { text-shadow: 1px 1px 3px rgba(0,0,0,0.8); margin: 0 0 15px 0; font-size: 20px; }
+        
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 15px 0; max-height: 220px; overflow-y: auto; padding-right: 5px; }
+        
+        .choice-btn { background: #2c3e50; color: white; border: 2px solid #34495e; padding: 10px 15px; font-size: 13px; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .choice-btn:hover:not([disabled]) { background: var(--theme-secondary); color: var(--theme-text); transform: scale(1.02); border-color: #ffffff; }
+        .choice-btn .pos-tag { background: var(--theme-accent); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; text-shadow: none; }
+        
+        .choice-btn[disabled] { background: rgba(20,20,20,0.4); border-color: #444; color: #666; cursor: not-allowed; opacity: 0.3; transform: none; }
+
+        button.action-btn { background: #27ae60; color: white; border: none; padding: 12px 25px; font-size: 18px; border-radius: 5px; cursor: pointer; font-weight: bold; margin: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        button.action-btn:hover { background: #2ecc71; }
+        button.skip { background: #d35400; }
+        button.skip:hover { background: #e67e22; }
+        
+        #results { font-size: 15px; margin-top: 20px; text-align: left; background: #111; padding: 20px; border-radius: 8px; border: 1px solid #444; line-height: 1.5; }
+        .finals-stage { border-left: 4px solid #f39c12; padding-left: 10px; margin: 10px 0; background: rgba(243, 156, 18, 0.05); padding-top: 2px; padding-bottom: 2px; }
+        .win-text { color: #2ecc71; font-weight: bold; }
+        .loss-text { color: #e74c3c; font-weight: bold; }
+
+        /* AD MODAL STYLES */
+        .ad-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .ad-box {
+            background: #111;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #3498db;
+            text-align: center;
+            max-width: 400px;
+            width: 85%;
+        }
+        .ad-spinner {
+            border: 4px solid #f33;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Pick or Stick</h1>
+    <div class="subtitle">Draft your team's spine directly onto the field. Do you stick with the OVR or pick a re-roll?</div>
+
+    <!-- FOOTBALL FIELD WITH VERTICAL SPINE POSITIONING -->
+    <div class="field-container">
+        <div class="field-lines">
+            <div class="arc-top"></div>
+            <div class="arc-bottom"></div>
+        </div>
+        <div class="spine-layout">
+            <div class="slot" id="slot-Key Fwd"><strong>▲ KEY FORWARD</strong><div id="player-Key Fwd" class="player-name">-</div><div id="info-Key Fwd" class="player-info"></div></div>
+            <div class="slot" id="slot-Outside Mid"><strong>❖ OUTSIDE MIDFIELDER</strong><div id="player-Outside Mid" class="player-name">-</div><div id="info-Outside Mid" class="player-info"></div></div>
+            <div class="slot" id="slot-Ruck"><strong>✦ RUCKMAN</strong><div id="player-Ruck" class="player-name">-</div><div id="info-Ruck" class="player-info"></div></div>
+            <div class="slot" id="slot-Inside Mid"><strong>⬢ INSIDE MIDFIELDER</strong><div id="player-Inside Mid" class="player-name">-</div><div id="info-Inside Mid" class="player-info"></div></div>
+            <div class="slot" id="slot-Key Def"><strong>▼ KEY DEFENDER</strong><div id="player-Key Def" class="player-name">-</div><div id="info-Key Def" class="player-info"></div></div>
+        </div>
+    </div>
+
+    <div class="prompt-box" id="draft-zone">
+        <h3 id="roll-title">Roll to start your draft strategy!</h3>
+        <div id="options-container" class="options-grid"></div>
+        <p style="font-size: 13px; margin: 10px 0; font-weight: bold;">Ad Re-rolls Remaining: <span id="skips-count">2</span></p>
+        <button onclick="generateRoll()" id="roll-btn" class="action-btn">Spin Wheel</button>
+        <button onclick="watchAdToSkip()" id="skip-btn" class="action-btn skip" style="display:none;">🎬 Skip Team (Watch Ad)</button>
+    </div>
+
+    <div id="results" style="display: none;"></div>
+</div>
+
+<!-- SIMULATED VIDEO AD MODAL -->
+<div id="ad-modal" class="ad-overlay">
+    <div class="ad-box">
+        <h2 style="color: #3498db; margin-top: 0;">Sponsored Video Ad</h2>
+        <p>Your team re-roll unlocks when the video completes...</p>
+        <div class="ad-spinner"></div>
+        <div id="ad-timer" style="font-size: 24px; font-weight: bold; color: #e74c3c;">3</div>
+    </div>
+</div>
+
+<script>
+const teamColors = {
+    "Carlton": { primary: "#0e1e38", secondary: "#1c3c73", accent: "#7f8c8d", text: "#ffffff" },
+    "Hawthorn": { primary: "#4d2310", secondary: "#fbca03", accent: "#4d2310", text: "#fbca03" },
+    "Richmond": { primary: "#000000", secondary: "#fed103", accent: "#cc0000", text: "#fed103" },
+    "North Melbourne": { primary: "#0055a5", secondary: "#ffffff", accent: "#0055a5", text: "#0055a5" },
+    "Essendon": { primary: "#000000", secondary: "#cc292b", accent: "#222222", text: "#ffffff" },
+    "Collingwood": { primary: "#ffffff", secondary: "#000000", accent: "#7f8c8d", text: "#000000" },
+    "West Coast": { primary: "#002c73", secondary: "#f2a900", accent: "#0051b5", text: "#f2a900" },
+    "Adelaide": { primary: "#002b5c", secondary: "#e31937", accent: "#ffd200", text: "#ffffff" },
+    "Brisbane Lions": { primary: "#730022", secondary: "#ffc222", accent: "#0055a5", text: "#ffffff" },
+    "Port Adelaide": { primary: "#000000", secondary: "#008a97", accent: "#ffffff", text: "#ffffff" },
+    "Sydney Swans": { primary: "#ed1c24", secondary: "#ffffff", accent: "#b30006", text: "#ed1c24" },
+    "Geelong Cats": { primary: "#1c3c73", secondary: "#ffffff", accent: "#1c3c73", text: "#1c3c73" },
+    "Western Bulldogs": { primary: "#014896", secondary: "#c70125", accent: "#ffffff", text: "#ffffff" },
+    "Melbourne": { primary: "#0f1e36", secondary: "#cc2031", accent: "#0f1e36", text: "#ffffff" }
+};
+
+const timelinePremiers = {
+    1970: { team: "Carlton", data: [["John Nicholls", "Ruck", 95], ["Syd Jackson", "Inside Mid", 84], ["Alex Jesaulenko", "Key Fwd", 96], ["Robert Walls", "Key Fwd", 88], ["Wes Lofts", "Key Def", 87], ["Sergio Silvagni", "Inside Mid", 89], ["Garry Crane", "Outside Mid", 86], ["Adrian Gallagher", "Outside Mid", 83], ["Barry Gill", "Key Def", 76], ["Percy Jones", "Ruck", 81]] },
+    1971: { team: "Hawthorn", data: [["Don Scott", "Ruck", 91], ["Leigh Matthews", "Inside Mid", 95], ["Peter Hudson", "Key Fwd", 98], ["Peter Knights", "Key Def", 91], ["David Parkin", "Key Def", 86], ["Michael Porter", "Inside Mid", 80], ["Bruce Stevenson", "Outside Mid", 77], ["Leon Rice", "Outside Mid", 82], ["Alan Martello", "Key Fwd", 85], ["Bob Keddie", "Key Fwd", 87]] },
+    1972: { team: "Carlton", data: [["John Nicholls", "Ruck", 94], ["Alex Jesaulenko", "Key Fwd", 95], ["Robert Walls", "Key Fwd", 90], ["Bruce Doull", "Key Def", 93], ["Geoff Southby", "Key Def", 91], ["Adrian Gallagher", "Outside Mid", 84], ["Garry Crane", "Outside Mid", 85], ["John Schultz", "Inside Mid", 79], ["Barry Armstrong", "Inside Mid", 78], ["Percy Jones", "Ruck", 83]] },
+    1973: { team: "Richmond", data: [["Michael Green", "Ruck", 86], ["Kevin Bartlett", "Outside Mid", 96], ["Royce Hart", "Key Fwd", 95], ["Francis Bourke", "Key Def", 92], ["Dick Clay", "Key Def", 87], ["Ian Stewart", "Inside Mid", 91], ["Paul Sproule", "Inside Mid", 82], ["Bryan Wood", "Outside Mid", 85], ["Neil Balme", "Key Fwd", 84], ["Brian Roberts", "Ruck", 80]] },
+    1974: { team: "Richmond", data: [["Michael Green", "Ruck", 85], ["Kevin Bartlett", "Outside Mid", 95], ["Royce Hart", "Key Fwd", 94], ["Francis Bourke", "Key Def", 91], ["Dick Clay", "Key Def", 86], ["Kevin Sheedy", "Inside Mid", 89], ["Paul Sproule", "Inside Mid", 81], ["Bryan Wood", "Outside Mid", 86], ["Barry Richardson", "Key Fwd", 79], ["Brian Roberts", "Ruck", 82]] },
+    1975: { team: "North Melbourne", data: [["Mick Nolan", "Ruck", 85], ["Malcolm Blight", "Key Fwd", 94], ["Barry Cable", "Inside Mid", 95], ["David Dench", "Key Def", 92], ["Wayne Schimmelbusch", "Outside Mid", 90], ["Keith Greig", "Outside Mid", 93], ["John Burns", "Inside Mid", 79], ["Doug Wade", "Key Fwd", 88], ["Frank Gumbleton", "Key Def", 81], ["Gary Farrant", "Ruck", 76]] },
+    1976: { team: "Hawthorn", data: [["Don Scott", "Ruck", 91], ["Leigh Matthews", "Inside Mid", 96], ["Peter Knights", "Key Def", 93], ["Michael Tuck", "Outside Mid", 89], ["Kelvin Moore", "Key Def", 90], ["Michael Moncrieff", "Key Fwd", 86], ["Geoff Ablett", "Outside Mid", 85], ["Alan Martello", "Key Fwd", 84], ["Barry Rowlings", "Inside Mid", 82], ["Bernie Jones", "Ruck", 75]] },
+    1977: { team: "North Melbourne", data: [["Mick Nolan", "Ruck", 86], ["Malcolm Blight", "Key Fwd", 95], ["Barry Cable", "Inside Mid", 93], ["David Dench", "Key Def", 93], ["Wayne Schimmelbusch", "Outside Mid", 91], ["Keith Greig", "Outside Mid", 90], ["John Cassin", "Inside Mid", 80], ["Phil Baker", "Key Fwd", 84], ["Glenn Archer", "Key Def", 71], ["Peter Spargo", "Ruck", 75]] },
+    1978: { team: "Hawthorn", data: [["Don Scott", "Ruck", 90], ["Leigh Matthews", "Inside Mid", 97], ["Michael Tuck", "Inside Mid", 91], ["Peter Knights", "Key Def", 91], ["Kelvin Moore", "Key Def", 89], ["Michael Moncrieff", "Key Fwd", 88], ["Geoff Ablett", "Outside Mid", 87], ["Richard DiPierdomenico", "Outside Mid", 85], ["Alan Martello", "Key Fwd", 81], ["Alle de Wolde", "Ruck", 76]] },
+    1979: { team: "Carlton", data: [["Mike Fitzpatrick", "Ruck", 88], ["Alex Jesaulenko", "Key Fwd", 91], ["Bruce Doull", "Key Def", 95], ["Wayne Johnston", "Inside Mid", 92], ["Garry Crane", "Outside Mid", 81], ["Ken Sheldon", "Outside Mid", 84], ["Mark Maclure", "Key Fwd", 85], ["Geoff Southby", "Key Def", 88], ["Rod Austin", "Key Def", 79], ["Peter Jones", "Ruck", 80]] },
+    1980: { team: "Richmond", data: [["Mark Lee", "Ruck", 90], ["Kevin Bartlett", "Key Fwd", 94], ["Dale Weightman", "Inside Mid", 91], ["Francis Bourke", "Key Def", 89], ["Jim Jess", "Key Def", 86], ["Michael Roach", "Key Fwd", 92], ["Bryan Wood", "Outside Mid", 85], ["Geoff Raines", "Outside Mid", 91], ["Barry Rowlings", "Inside Mid", 84], ["David Cloke", "Ruck", 87]] },
+    1981: { team: "Carlton", data: [["Mike Fitzpatrick", "Ruck", 90], ["Bruce Doull", "Key Def", 96], ["Wayne Johnston", "Inside Mid", 93], ["Rod Ashman", "Inside Mid", 87], ["Mark Maclure", "Key Fwd", 86], ["Peter Bosustow", "Key Fwd", 85], ["Ken Hunter", "Key Def", 91], ["David Glascott", "Outside Mid", 83], ["Val Perovic", "Key Def", 84], ["Warren Jones", "Ruck", 77]] },
+    1982: { team: "Carlton", data: [["Mike Fitzpatrick", "Ruck", 89], ["Bruce Doull", "Key Def", 95], ["Wayne Johnston", "Inside Mid", 94], ["Rod Ashman", "Inside Mid", 88], ["Mark Maclure", "Key Fwd", 87], ["Jim Buckley", "Outside Mid", 86], ["Ken Hunter", "Key Def", 92], ["David Glascott", "Outside Mid", 84], ["Val Perovic", "Key Def", 85], ["Warren Jones", "Ruck", 78]] },
+    1983: { team: "Hawthorn", data: [["Don Scott", "Ruck", 81], ["Leigh Matthews", "Key Fwd", 93], ["Michael Tuck", "Inside Mid", 93], ["Gary Ayres", "Key Def", 90], ["Chris Mew", "Key Def", 89], ["Dermott Brereton", "Key Fwd", 88], ["Terry Wallace", "Inside Mid", 91], ["Richard DiPierdomenico", "Outside Mid", 88], ["Robert DiPierdomenico", "Outside Mid", 86], ["Ken Judge", "Key Fwd", 82]] },
+    1984: { team: "Essendon", data: [["Simon Madden", "Ruck", 94], ["Tim Watson", "Inside Mid", 93], ["Terry Daniher", "Key Fwd", 91], ["Paul Salmon", "Key Fwd", 89], ["Paul Vander Haar", "Key Fwd", 86], ["Leon Baker", "Outside Mid", 88], ["Glenn Hawker", "Outside Mid", 84], ["Garry Foulds", "Key Def", 83], ["Billy Duckworth", "Key Def", 85], ["Roger Merrett", "Ruck", 85]] },
+    1985: { team: "Essendon", data: [["Simon Madden", "Ruck", 95], ["Tim Watson", "Inside Mid", 94], ["Terry Daniher", "Key Fwd", 92], ["Paul Salmon", "Key Fwd", 90], ["Mark Thompson", "Key Def", 87], ["Leon Baker", "Outside Mid", 89], ["Glenn Hawker", "Outside Mid", 85], ["Garry Foulds", "Key Def", 84], ["Billy Duckworth", "Key Def", 83], ["Roger Merrett", "Ruck", 86]] },
+    1986: { team: "Hawthorn", data: [["Gary Buckenara", "Outside Mid", 89], ["Leigh Matthews", "Key Fwd", 84], ["Michael Tuck", "Inside Mid", 92], ["Gary Ayres", "Key Def", 92], ["Chris Mew", "Key Def", 90], ["Dermott Brereton", "Key Fwd", 93], ["Terry Wallace", "Inside Mid", 89], ["Robert DiPierdomenico", "Outside Mid", 91], ["John Platten", "Inside Mid", 94], ["Greg Dear", "Ruck", 82]] },
+    1987: { team: "Carlton", data: [["Justin Madden", "Ruck", 92], ["Stephen Kernahan", "Key Fwd", 96], ["Craig Bradley", "Outside Mid", 94], ["Stephen Silvagni", "Key Def", 93], ["Wayne Johnston", "Inside Mid", 90], ["Adrian Gleeson", "Inside Mid", 83], ["David Rhys-Jones", "Key Def", 89], ["Jon Dorotich", "Key Def", 82], ["Peter Sartori", "Key Fwd", 80], ["Tom Alvin", "Outside Mid", 84]] },
+    1988: { team: "Hawthorn", data: [["Greg Dear", "Ruck", 84], ["Dermott Brereton", "Key Fwd", 94], ["Jason Dunstall", "Key Fwd", 97], ["John Platten", "Inside Mid", 95], ["Michael Tuck", "Inside Mid", 90], ["Gary Ayres", "Key Def", 93], ["Chris Mew", "Key Def", 91], ["Chris Langford", "Key Def", 92], ["Darrin Pritchard", "Outside Mid", 86], ["Anthony Condon", "Outside Mid", 81]] },
+    1989: { team: "Hawthorn", data: [["Greg Dear", "Ruck", 83], ["Dermott Brereton", "Key Fwd", 92], ["Jason Dunstall", "Key Fwd", 98], ["John Platten", "Inside Mid", 94], ["Michael Tuck", "Inside Mid", 89], ["Gary Ayres", "Key Def", 91], ["Chris Mew", "Key Def", 90], ["Chris Langford", "Key Def", 93], ["Darrin Pritchard", "Outside Mid", 88], ["Dean Anderson", "Outside Mid", 82]] },
+    1990: { team: "Collingwood", data: [["Damian Monkhorst", "Ruck", 87], ["Tony Shaw", "Inside Mid", 91], ["Peter Daicos", "Key Fwd", 95], ["Gavin Brown", "Outside Mid", 90], ["Michael Christian", "Key Def", 85], ["Denis Banks", "Key Def", 84], ["Craig Starcevich", "Key Fwd", 83], ["Mick McGuane", "Inside Mid", 88], ["Graham Wright", "Outside Mid", 87], ["James Manson", "Ruck", 80]] },
+    1991: { team: "Hawthorn", data: [["Stephen Lawrence", "Ruck", 86], ["Jason Dunstall", "Key Fwd", 96], ["John Platten", "Inside Mid", 91], ["Michael Tuck", "Inside Mid", 86], ["Chris Langford", "Key Def", 92], ["Gary Ayres", "Key Def", 88], ["Ben Allan", "Outside Mid", 89], ["Darrin Pritchard", "Outside Mid", 85], ["Paul Dear", "Key Fwd", 84], ["Paul Hudson", "Key Fwd", 85]] },
+    1992: { team: "West Coast", data: [["Dean Kemp", "Inside Mid", 92], ["Peter Matera", "Outside Mid", 96], ["John Worsfold", "Key Def", 90], ["Glen Jakovich", "Key Def", 93], ["Peter Sumich", "Key Fwd", 89], ["Chris Mainwaring", "Outside Mid", 91], ["Guy McKenna", "Key Def", 91], ["Michael Brennan", "Key Def", 84], ["Craig Turley", "Inside Mid", 86], ["Paul Harding", "Ruck", 82]] },
+    1993: { team: "Essendon", data: [["Paul Salmon", "Ruck", 91], ["Gavin Wanganeen", "Key Def", 94], ["Tim Watson", "Outside Mid", 85], ["Mark Thompson", "Key Def", 89], ["Michael Long", "Outside Mid", 92], ["James Hird", "Key Fwd", 87], ["Mark Mercuri", "Inside Mid", 85], ["Joe Misiti", "Inside Mid", 86], ["Dustin Fletcher", "Key Def", 84], ["David Calthorpe", "Outside Mid", 81]] },
+    1994: { team: "West Coast", data: [["Dean Kemp", "Inside Mid", 94], ["Peter Matera", "Outside Mid", 95], ["John Worsfold", "Key Def", 89], ["Glen Jakovich", "Key Def", 96], ["Peter Sumich", "Key Fwd", 88], ["Chris Mainwaring", "Outside Mid", 89], ["Guy McKenna", "Key Def", 92], ["David Hynes", "Ruck", 83], ["Drew Banfield", "Inside Mid", 85], ["Jason Ball", "Key Fwd", 82]] },
+    1995: { team: "Carlton", data: [["Justin Madden", "Ruck", 89], ["Stephen Kernahan", "Key Fwd", 93], ["Greg Williams", "Inside Mid", 96], ["Craig Bradley", "Outside Mid", 93], ["Stephen Silvagni", "Key Def", 96], ["Brett Ratten", "Inside Mid", 91], ["Anthony Koutoufides", "Outside Mid", 89], ["Mil Hanna", "Outside Mid", 84], ["Michael Sexton", "Key Def", 87], ["Peter Dean", "Key Def", 81]] },
+    1996: { team: "North Melbourne", data: [["Corey McKernan", "Ruck", 94], ["Wayne Carey", "Key Fwd", 98], ["Glenn Archer", "Key Def", 91], ["Anthony Stevens", "Inside Mid", 90], ["Mick Martyn", "Key Def", 86], ["Craig Sholl", "Key Fwd", 84], ["David King", "Outside Mid", 88], ["Peter Bell", "Inside Mid", 87], ["Robert Scott", "Outside Mid", 83], ["Matthew Capuano", "Ruck", 79]] },
+    1997: { team: "Adelaide", data: [["Shaun Rehn", "Ruck", 92], ["Andrew McLeod", "Outside Mid", 95], ["Darren Jarman", "Inside Mid", 93], ["Mark Ricciuto", "Inside Mid", 91], ["Ben Hart", "Key Def", 90], ["Nigel Smart", "Key Def", 87], ["Brett James", "Outside Mid", 82], ["Troy Bond", "Key Fwd", 83], ["Shane Ellen", "Key Def", 80], ["Simon Goodwin", "Outside Mid", 81]] },
+    1998: { team: "Adelaide", data: [["Shaun Rehn", "Ruck", 93], ["Andrew McLeod", "Outside Mid", 96], ["Darren Jarman", "Key Fwd", 92], ["Mark Ricciuto", "Inside Mid", 94], ["Ben Hart", "Key Def", 91], ["Nigel Smart", "Key Def", 88], ["Simon Goodwin", "Outside Mid", 85], ["Tyson Edwards", "Inside Mid", 86], ["Mark Stevens", "Key Fwd", 82], ["Peter Vardy", "Key Fwd", 81]] },
+    1999: { team: "North Melbourne", data: [["Corey McKernan", "Ruck", 89], ["Wayne Carey", "Key Fwd", 97], ["Glenn Archer", "Key Def", 92], ["Anthony Stevens", "Inside Mid", 91], ["Mick Martyn", "Key Def", 85], ["David King", "Outside Mid", 89], ["Peter Bell", "Inside Mid", 90], ["Shannon Grant", "Outside Mid", 88], ["Winston Abraham", "Key Fwd", 82], ["Matthew Capuano", "Ruck", 81]] },
+    2000: { team: "Essendon", data: [["John Barnes", "Ruck", 82], ["James Hird", "Outside Mid", 96], ["Matthew Lloyd", "Key Fwd", 96], ["Dustin Fletcher", "Key Def", 94], ["Jason Johnson", "Inside Mid", 88], ["Joe Misiti", "Inside Mid", 86], ["Blake Caracella", "Outside Mid", 85], ["Mark Mercuri", "Outside Mid", 87], ["Scott Lucas", "Key Fwd", 87], ["Dean Wallis", "Key Def", 78]] },
+    2001: { team: "Brisbane Lions", data: [["Clark Keating", "Ruck", 84], ["Michael Voss", "Inside Mid", 96], ["Jason Akermanis", "Outside Mid", 94], ["Jonathan Brown", "Key Fwd", 89], ["Nigel Lappin", "Outside Mid", 91], ["Simon Black", "Inside Mid", 92], ["Justin Leppitsch", "Key Def", 89], ["Mal Michael", "Key Def", 86], ["Alastair Lynch", "Key Fwd", 87], ["Beau McDonald", "Ruck", 78]] },
+    2002: { team: "Brisbane Lions", data: [["Clark Keating", "Ruck", 85], ["Michael Voss", "Inside Mid", 95], ["Jason Akermanis", "Outside Mid", 93], ["Jonathan Brown", "Key Fwd", 91], ["Nigel Lappin", "Outside Mid", 92], ["Simon Black", "Inside Mid", 95], ["Justin Leppitsch", "Key Def", 90], ["Mal Michael", "Key Def", 87], ["Alastair Lynch", "Key Fwd", 88], ["Chris Scott", "Key Def", 84]] },
+    2003: { team: "Brisbane Lions", data: [["Clark Keating", "Ruck", 86], ["Michael Voss", "Inside Mid", 96], ["Jason Akermanis", "Outside Mid", 92], ["Jonathan Brown", "Key Fwd", 93], ["Nigel Lappin", "Outside Mid", 93], ["Simon Black", "Inside Mid", 94], ["Justin Leppitsch", "Key Def", 91], ["Mal Michael", "Key Def", 88], ["Alastair Lynch", "Key Fwd", 86], ["Jamie Charman", "Ruck", 82]] },
+    2004: { team: "Port Adelaide", data: [["Brendon Lade", "Ruck", 89], ["Warren Tredrea", "Key Fwd", 94], ["Gavin Wanganeen", "Outside Mid", 91], ["Kane Cornes", "Inside Mid", 90], ["Chad Cornes", "Key Def", 93], ["Darryl Wakelin", "Key Def", 86], ["Peter Burgoyne", "Outside Mid", 88], ["Byron Pickett", "Outside Mid", 87], ["Michael Wilson", "Key Def", 84], ["Dean Brogan", "Ruck", 83]] },
+    2005: { team: "Sydney Swans", data: [["Darren Jolly", "Ruck", 87], ["Barry Hall", "Key Fwd", 93], ["Brett Kirk", "Inside Mid", 90], ["Adam Goodes", "Outside Mid", 92], ["Leo Barry", "Key Def", 89], ["Craig Bolton", "Key Def", 86], ["Ryan O'Keefe", "Outside Mid", 87], ["Jude Bolton", "Inside Mid", 85], ["Michael O'Loughlin", "Key Fwd", 88], ["Jason Ball", "Ruck", 81]] },
+    2006: { team: "West Coast", data: [["Dean Cox", "Ruck", 95], ["Chris Judd", "Inside Mid", 96], ["Ben Cousins", "Outside Mid", 92], ["Daniel Kerr", "Inside Mid", 91], ["Darren Glass", "Key Def", 90], ["Andrew Embley", "Outside Mid", 87], ["Quintor Lynch", "Key Fwd", 84], ["Adam Hunter", "Key Def", 84], ["Ashley Hansen", "Key Fwd", 80], ["Mark Seaby", "Ruck", 78]] },
+    2007: { team: "Geelong Cats", data: [["Brad Ottens", "Ruck", 90], ["Gary Ablett Jr", "Inside Mid", 96], ["Matthew Scarlett", "Key Def", 95], ["Jimmy Bartel", "Inside Mid", 94], ["Joel Selwood", "Inside Mid", 86], ["Cameron Mooney", "Key Fwd", 86], ["Tom Hawkins", "Key Fwd", 81], ["Tom Harley", "Key Def", 85], ["Corey Enright", "Outside Mid", 89], ["Mark Blake", "Ruck", 74]] },
+    2008: { team: "Hawthorn", data: [["Robert Campbell", "Ruck", 80], ["Lance Franklin", "Key Fwd", 96], ["Sam Mitchell", "Inside Mid", 93], ["Luke Hodge", "Key Def", 94], ["Jarryd Roughead", "Key Fwd", 89], ["Shane Crawford", "Outside Mid", 85], ["Jordan Lewis", "Inside Mid", 86], ["Trent Croad", "Key Def", 87], ["Chance Bateman", "Outside Mid", 84], ["Brent Renouf", "Ruck", 74]] },
+    2009: { team: "Geelong Cats", data: [["Brad Ottens", "Ruck", 89], ["Gary Ablett Jr", "Inside Mid", 97], ["Matthew Scarlett", "Key Def", 94], ["Jimmy Bartel", "Outside Mid", 92], ["Joel Selwood", "Inside Mid", 91], ["Tom Hawkins", "Key Fwd", 85], ["Cameron Mooney", "Key Fwd", 83], ["Tom Harley", "Key Def", 83], ["Corey Enright", "Outside Mid", 91], ["Mark Blake", "Ruck", 75]] },
+    2010: { team: "Collingwood", data: [["Darren Jolly", "Ruck", 88], ["Dane Swan", "Inside Mid", 95], ["Scott Pendlebury", "Inside Mid", 94], ["Travis Cloke", "Key Fwd", 90], ["Nick Maxwell", "Key Def", 86], ["Chris Tarrant", "Key Def", 85], ["Dale Thomas", "Outside Mid", 89], ["Steele Sidebottom", "Outside Mid", 86], ["Chris Dawes", "Key Fwd", 81], ["Leigh Brown", "Ruck", 82]] },
+    2011: { team: "Geelong Cats", data: [["Brad Ottens", "Ruck", 88], ["Joel Selwood", "Inside Mid", 93], ["Jimmy Bartel", "Outside Mid", 90], ["Tom Hawkins", "Key Fwd", 88], ["James Podsiadly", "Key Fwd", 84], ["Matthew Scarlett", "Key Def", 91], ["Harry Taylor", "Key Def", 90], ["Corey Enright", "Outside Mid", 90], ["James Kelly", "Inside Mid", 87], ["Trent West", "Ruck", 76]] },
+    2012: { team: "Sydney Swans", data: [["Shane Mumford", "Ruck", 88], ["Josh Kennedy", "Inside Mid", 93], ["Kieren Jack", "Inside Mid", 90], ["Jarrad McVeigh", "Outside Mid", 89], ["Adam Goodes", "Key Fwd", 89], ["Sam Reid", "Key Fwd", 81], ["Ted Richards", "Key Def", 87], ["Heath Grundy", "Key Def", 85], ["Lewis Jetta", "Outside Mid", 84], ["Mike Pyke", "Ruck", 80]] },
+    2013: { team: "Hawthorn", data: [["David Hale", "Ruck", 83], ["Sam Mitchell", "Inside Mid", 94], ["Luke Hodge", "Outside Mid", 93], ["Lance Franklin", "Key Fwd", 94], ["Jarryd Roughead", "Key Fwd", 92], ["Brian Lake", "Key Def", 91], ["Josh Gibson", "Key Def", 90], ["Jordan Lewis", "Inside Mid", 88], ["Isaac Smith", "Outside Mid", 86], ["Max Bailey", "Ruck", 79]] },
+    2014: { team: "Hawthorn", data: [["David Hale", "Ruck", 82], ["Sam Mitchell", "Inside Mid", 93], ["Luke Hodge", "Key Def", 94], ["Jarryd Roughead", "Key Fwd", 93], ["Jack Gunston", "Key Fwd", 88], ["Brian Lake", "Key Def", 89], ["Josh Gibson", "Key Def", 91], ["Jordan Lewis", "Inside Mid", 91], ["Isaac Smith", "Outside Mid", 87], ["Jonathon Ceglar", "Ruck", 78]] },
+    2015: { team: "Hawthorn", data: [["David Hale", "Ruck", 81], ["Sam Mitchell", "Inside Mid", 94], ["Luke Hodge", "Outside Mid", 92], ["Jarryd Roughead", "Key Fwd", 90], ["Jack Gunston", "Key Fwd", 89], ["Brian Lake", "Key Def", 87], ["Josh Gibson", "Key Def", 92], ["Jordan Lewis", "Inside Mid", 89], ["Isaac Smith", "Outside Mid", 88], ["Ben McEvoy", "Ruck", 84]] },
+    2016: { team: "Western Bulldogs", data: [["Tom Boyd", "Ruck", 86], ["Marcus Bontempelli", "Inside Mid", 94], ["Luke Dahlhaus", "Inside Mid", 87], ["Lachie Hunter", "Outside Mid", 86], ["Jack Macrae", "Outside Mid", 89], ["Jake Stringer", "Key Fwd", 85], ["Tom Boyd", "Key Fwd", 84], ["Dale Morris", "Key Def", 88], ["Joel Hamling", "Key Def", 81], ["Jordan Roughead", "Ruck", 82]] },
+    2017: { team: "Richmond", data: [["Toby Nankervis", "Ruck", 84], ["Dustin Martin", "Outside Mid", 97], ["Alex Rance", "Key Def", 93], ["Trent Cotchin", "Inside Mid", 90], ["Jack Riewoldt", "Key Fwd", 88], ["David Astbury", "Key Def", 82], ["Dion Prestia", "Inside Mid", 86], ["Shaun Grigg", "Outside Mid", 80], ["Bachar Houli", "Outside Mid", 85], ["Todd Elton", "Key Fwd", 70]] },
+    2018: { team: "West Coast", data: [["Nathan Vardy", "Ruck", 79], ["Luke Shuey", "Inside Mid", 92], ["Elliot Yeo", "Inside Mid", 91], ["Andrew Gaff", "Outside Mid", 90], ["Jack Darling", "Key Fwd", 88], ["Josh Kennedy", "Key Fwd", 93], ["Jeremy McGovern", "Key Def", 94], ["Tom Barrass", "Key Def", 86], ["Shannon Hurn", "Key Def", 89], ["Scott Lycett", "Ruck", 83]] },
+    2019: { team: "Richmond", data: [["Toby Nankervis", "Ruck", 85], ["Dustin Martin", "Outside Mid", 95], ["Dion Prestia", "Inside Mid", 89], ["Trent Cotchin", "Inside Mid", 87], ["Tom Lynch", "Key Fwd", 91], ["Jack Riewoldt", "Key Fwd", 87], ["Dylan Grimes", "Key Def", 90], ["David Astbury", "Key Def", 84], ["Bachar Houli", "Outside Mid", 86], ["Ivan Soldo", "Ruck", 81]] },
+    2020: { team: "Richmond", data: [["Toby Nankervis", "Ruck", 86], ["Dustin Martin", "Outside Mid", 96], ["Dion Prestia", "Inside Mid", 87], ["Trent Cotchin", "Inside Mid", 86], ["Tom Lynch", "Key Fwd", 89], ["Jack Riewoldt", "Key Fwd", 86], ["Dylan Grimes", "Key Def", 89], ["Noah Balta", "Key Def", 83], ["Kamdyn McIntosh", "Outside Mid", 81], ["Marlion Pickett", "Outside Mid", 80]] },
+    2021: { team: "Melbourne", data: [["Max Gawn", "Ruck", 95], ["Christian Petracca", "Inside Mid", 94], ["Clayton Oliver", "Inside Mid", 93], ["Steven May", "Key Def", 91], ["Jake Lever", "Key Def", 88], ["Bayley Fritsch", "Key Fwd", 86], ["Ben Brown", "Key Fwd", 82], ["Ed Langdon", "Outside Mid", 84], ["Angus Brayshaw", "Outside Mid", 85], ["Luke Jackson", "Ruck", 81]] },
+    2022: { team: "Geelong Cats", data: [["Rhys Stanley", "Ruck", 83], ["Patrick Dangerfield", "Inside Mid", 93], ["Cameron Guthrie", "Inside Mid", 88], ["Mitch Duncan", "Outside Mid", 87], ["Isaac Smith", "Outside Mid", 86], ["Jeremy Cameron", "Key Fwd", 95], ["Tom Hawkins", "Key Fwd", 92], ["Sam De Koning", "Key Def", 85], ["Tom Stewart", "Key Def", 94], ["Mark Blicavs", "Ruck", 88]] },
+    2023: { team: "Collingwood", data: [["Darcy Cameron", "Ruck", 85], ["Jordan De Goey", "Inside Mid", 92], ["Nick Daicos", "Outside Mid", 95], ["Tom Mitchell", "Inside Mid", 87], ["Josh Daicos", "Outside Mid", 88], ["Brody Mihocek", "Key Fwd", 84], ["Dan McStay", "Key Fwd", 82], ["Darcy Moore", "Key Def", 92], ["Nathan Murphy", "Key Def", 81], ["Mason Cox", "Ruck", 81]] },
+    2024: { team: "Brisbane Lions", data: [["Oscar McInerney", "Ruck", 86], ["Lachie Neale", "Inside Mid", 95], ["Josh Dunkley", "Inside Mid", 91], ["Hugh McCluggage", "Outside Mid", 90], ["Jarrod Berry", "Outside Mid", 85], ["Joe Daniher", "Key Fwd", 92], ["Eric Hipwood", "Key Fwd", 83], ["Harris Andrews", "Key Def", 93], ["Jack Payne", "Key Def", 84], ["Darcy Fort", "Ruck", 78]] },
+    2025: { team: "Brisbane Lions", data: [["Oscar McInerney", "Ruck", 87], ["Lachie Neale", "Inside Mid", 94], ["Josh Dunkley", "Inside Mid", 90], ["Hugh McCluggage", "Outside Mid", 91], ["Will Ashcroft", "Inside Mid", 89], ["Joe Daniher", "Key Fwd", 91], ["Eric Hipwood", "Key Fwd", 84], ["Harris Andrews", "Key Def", 92], ["Ryan Lester", "Key Def", 82], ["Darcy Fort", "Ruck", 79]] }
+};
+
+const playersPool = [];
+for (const year in timelinePremiers) {
+    const context = timelinePremiers[year];
+    context.data.forEach(item => {
+        playersPool.push({
+            year: parseInt(year),
+            team: context.team,
+            name: item[0],
+            pos: item[1],
+            rating: item[2]
+        });
+    });
+}
+
+const uniqueTeams = [...new Set(playersPool.map(p => `${p.year} | ${p.team}`))];
+let skipsLeft = 2;
+let myTeam = { "Ruck": null, "Inside Mid": null, "Outside Mid": null, "Key Fwd": null, "Key Def": null };
+let filledSlots = 0;
+
+function generateRoll() {
+    document.getElementById('roll-btn').style.display = "none";
+    if (skipsLeft > 0) document.getElementById('skip-btn').style.display = "inline-block";
+
+    const randomTeamString = uniqueTeams[Math.floor(Math.random() * uniqueTeams.length)];
+    const [yearStr, teamName] = randomTeamString.split(" | ");
+    const currentYear = parseInt(yearStr);
+
+    const colors = teamColors[teamName.trim()] || { primary: "#1e3a24", secondary: "#27ae60", accent: "#e67e22", text: "#ffffff" };
+    const root = document.documentElement;
+    root.style.setProperty('--theme-primary', colors.primary);
+    root.style.setProperty('--theme-secondary', colors.secondary);
+    root.style.setProperty('--theme-accent', colors.accent);
+    root.style.setProperty('--theme-text', colors.text);
+
+    document.getElementById('roll-title').innerText = `🏆 ${currentYear} ${teamName}`;
+    
+    let fullRoster = playersPool.filter(p => p.team === teamName.trim() && p.year === currentYear);
+    let activeOptionsLeft = fullRoster.filter(p => !myTeam[p.pos]).length;
+
+    let html = "";
+    if (activeOptionsLeft === 0) {
+        html = "<p style='color:#e74c3c; font-weight:bold;'>All spots from this side are already locked! Spin again.</p>";
+        document.getElementById('roll-btn').style.display = "inline-block";
+        document.getElementById('skip-btn').style.display = "none";
+    } else {
+        fullRoster.forEach(player => {
+            const isPositionFilled = myTeam[player.pos] !== null;
+            const disabledAttr = isPositionFilled ? "disabled" : "";
+            
+            html += `<button class="choice-btn" ${disabledAttr} onclick="draftPlayer('${player.name.replace(/'/g, "\\'")}', '${player.pos}', ${player.rating}, ${player.year}, '${player.team}')">
+                        <strong>${player.name}</strong>
+                        <span>OVR: ${player.rating} <span class="pos-tag">${player.pos.toUpperCase()}</span></span>
+                    </button>`;
+        });
+    }
+    document.getElementById('options-container').innerHTML = html;
+}
+
+function watchAdToSkip() {
+    if (skipsLeft <= 0) return;
+
+    // Show Simulated Video Ad Overlay
+    const modal = document.getElementById('ad-modal');
+    const timerText = document.getElementById('ad-timer');
+    modal.style.display = "flex";
+    
+    let timeLeft = 3;
+    timerText.innerText = timeLeft;
+
+    const interval = setInterval(() => {
+        timeLeft--;
+        timerText.innerText = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            modal.style.display = "none";
+            
+            // Execute the actual re-roll function once ad concludes
+            skipsLeft--;
+            document.getElementById('skips-count').innerText = skipsLeft;
+            generateRoll();
+        }
+    }, 1000);
+}
+
+function draftPlayer(name, pos, rating, year, team) {
+    myTeam[pos] = { name, rating, year, team };
+    filledSlots++;
+    
+    const slotEl = document.getElementById(`slot-${pos}`);
+    slotEl.classList.add('filled');
+    
+    let posIcons = {"Key Fwd":"▲ ","Outside Mid":"❖ ","Ruck":"✦ ","Inside Mid":"⬢ ","Key Def":"▼ "};
+    let displayIcon = posIcons[pos] || "";
+    
+    slotEl.innerHTML = `<strong>${displayIcon}${pos.toUpperCase()}</strong>
+                        <div class="player-name">${name}</div>
+                        <div class="player-info">'${String(year).slice(-2)} ${team.split(' ')[0]} (OVR: ${rating})</div>`;
+
+    document.getElementById('options-container').innerHTML = "";
+    document.getElementById('skip-btn').style.display = "none";
+    
+    if (filledSlots < 5) {
+        document.getElementById('roll-title').innerText = "Pick or Stick? Roll next position...";
+        document.getElementById('roll-btn').style.display = "inline-block";
+    } else {
+        runSimulation();
+    }
+}
+
+function runSimulation() {
+    document.getElementById('draft-zone').style.display = "none";
+    
+    let totalRating = 0;
+    for (let pos in myTeam) {
+        totalRating += myTeam[pos].rating;
+    }
+    
+    let spineAvg = totalRating / 5;
+    // TIGHTENED DIFFICULTY CRUNCH: Spine retains its powerful weight, but raw threshold demands higher quality inputs
+    let fullSquadOVR = (spineAvg * 0.35) + (81.2 * 0.65); 
+    
+    let wins = 0;
+    let losses = 0;
+    
+    // Win curve modified: Higher base score requirement protects the competitive margin of a 22-0 run
+    const baseWinProbability = (fullSquadOVR - 75.3) / 11.2;
+
+    for (let i = 0; i < 22; i++) {
+        // Match day variance slightly opened to generate natural regular season upsets
+        let matchDayVariance = (Math.random() * 0.16) - 0.08; 
+        let finalMatchProbability = Math.max(0.02, Math.min(0.97, baseWinProbability + matchDayVariance));
+
+        if (Math.random() < finalMatchProbability) {
+            wins++;
+        } else {
+            losses++;
+        }
+    }
+
+    let ladderPos = 1;
+    if (wins <= 21) ladderPos = 2;
+    if (wins <= 16) ladderPos = 3;
+    if (wins <= 14) ladderPos = 4;
+    if (wins <= 12) ladderPos = 5;
+    if (wins <= 11) ladderPos = 6;
+    if (wins <= 10) ladderPos = 7;
+    if (wins <= 9) ladderPos = 8;
+    if (wins <= 7) ladderPos = 14;
+    if (wins <= 4) ladderPos = 18;
+
+    let outputHtml = `<h2 style='color:#f39c12; margin-top:0; font-size:20px;'>HOME & AWAY SEASON RESULTS</h2>`;
+    outputHtml += `Final Record: <span style="font-size:18px;"><strong>${wins} Wins - ${losses} Losses</strong></span><br>Ladder Rank: <strong>#${ladderPos}</strong><br><br>`;
+
+    if (ladderPos <= 8) {
+        outputHtml += `<h2 style='color:#f39c12; font-size:20px; margin-bottom:5px;'>🏆 FINALS SERIES</h2>`;
+        let currentRank = ladderPos;
+        let alive = true;
+        let week = 1;
+        
+        // Increased difficulty parameters added specifically to Finals match metrics
+        let playMatch = (diffBonus = 0) => {
+            let rollChance = baseWinProbability - diffBonus + ((Math.random() * 0.1) - 0.05);
+            return Math.random() < Math.max(0.05, rollChance);
+        };
+
+        if (currentRank <= 4) {
+            outputHtml += `<div class="finals-stage"><strong>Week 1: Qualifying Final (Double Chance)</strong><br>`;
+            if (playMatch(0.02)) {
+                outputHtml += `<span class="win-text">WON!</span> Advanced straight to the Preliminary Finals!</div>`;
+                week = 3;
+            } else {
+                outputHtml += `<span class="loss-text">LOST!</span> Dropped into the Semi Finals safety net.</div>`;
+                week = 2;
+            }
+        } else {
+            outputHtml += `<div class="finals-stage"><strong>Week 1: Elimination Final (Knockout)</strong><br>`;
+            if (playMatch(0.01)) {
+                outputHtml += `<span class="win-text">WON!</span> Survived the knockout. Moving to the Semis!</div>`;
+                week = 2;
+            } else {
+                outputHtml += `<span class="loss-text">LOST!</span> Knocked out in Week 1. Season over!</div>`;
+                alive = false;
+            }
+        }
+
+        if (alive && week === 2) {
+            outputHtml += `<div class="finals-stage"><strong>Week 2: Semi Final (Knockout)</strong><br>`;
+            if (playMatch(0.02)) {
+                outputHtml += `<span class="win-text">WON!</span> Moving on into the Prelims!</div>`;
+                week = 3;
+            } else {
+                outputHtml += `<span class="loss-text">LOST!</span> Season finished in the Semi Finals.</div>`;
+                alive = false;
+            }
+        }
+
+        if (alive && week === 3) {
+            outputHtml += `<div class="finals-stage"><strong>Week 3: Preliminary Final (1 Win from Grand Final)</strong><br>`;
+            if (playMatch(0.03)) {
+                outputHtml += `<span class="win-text">WON!</span> YOU ARE INTO THE GRAND FINAL!</div>`;
+                week = 4;
+            } else {
+                outputHtml += `<span class="loss-text">LOST!</span> Fell short at the Prelim stage.</div>`;
+                alive = false;
+            }
+        }
+           if (alive && week === 4) {
+            outputHtml += `<div class="finals-stage" style="background:rgba(39, 174, 96, 0.1); border-left-color:#27ae60; padding:10px;">`;
+            outputHtml += `🚨 <strong>THE AFL GRAND FINAL 🚨</strong><br>`;
+            if (playMatch(0.05)) {
+                outputHtml += `<span class="win-text" style="font-size:22px;">🎉 PREMIERS! 🎉</span><br>The final siren sounds and you lift the premiership cup!`;
+                if (wins === 22) {
+                    outputHtml += `<br><strong style="color:#f1c40f;">🥇 IMMORTAL STATUS: You went 26-0! Perfect season achieved!</strong>`;
+                }
+            } else {
+                outputHtml += `<span class="loss-text" style="font-size:20px;">LOST THE GRAND FINAL!</span><br>Heartbreak on the final day. So close to greatness.`;
+            }
+            outputHtml += `</div>`;
+        }
+
+    } else {
+        outputHtml += `<p class="loss-text">❌ MISSED THE FINALS. Lower squad depth dragged you down. Spin again to build a sturdier spine!</p>`;
+    }
+
+    // Injected WhatsApp and Twitter Share Container right into the results screen
+    outputHtml += `
+    <div class="share-container" style="margin: 18px 0; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; border: 1px dashed #444;">
+        <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: #f39c12;">📢 SHARE YOUR SPINE TEAM!</p>
+        <a href="https://twitter.com/intent/tweet?text=I%20just%20drafted%20my%20ultimate%20AFL%20Spine%20Team%20in%20Pick%20or%20Stick!%20Can%20you%20beat%20my%20score?%20Play%20now!" target="_blank" style="display: inline-block; padding: 10px 18px; margin: 5px; font-size: 13px; font-weight: bold; color: #fff; text-decoration: none; border-radius: 5px; background-color: #1da1f2;">📱 Share on X / Twitter</a>
+        <a href="https://api.whatsapp.com/send?text=I%20just%20drafted%20my%20ultimate%20AFL%20Spine%20Team%20in%20Pick%20or%20Stick!%20Can%20you%20beat%20my%20score?%20Play%20now!" target="_blank" style="display: inline-block; padding: 10px 18px; margin: 5px; font-size: 13px; font-weight: bold; color: #fff; text-decoration: none; border-radius: 5px; background-color: #25d366;">💬 Share on WhatsApp</a>
+    </div>
+    `;
+
+    outputHtml += `<br><button class="action-btn" onclick="window.location.reload()">New Draft Run</button>`;
+    
+    const resultsEl = document.getElementById('results');
+    resultsEl.innerHTML = outputHtml;
+    resultsEl.style.display = "block";
+}
+</script>
+</body>
+</html>
