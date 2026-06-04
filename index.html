@@ -508,5 +508,20 @@ function runSimulation() {
     resultsEl.style.display = "block";
 }
 </script>
+    !-- Invisible Audio System using Millionaire Thinking Music -->
+<audio id="bg-music" loop preload="auto">
+    <source src="https://archive.org/download/WhoWantsToBeAMillionaire64kQuestionMusicOneHourLoop/Who%20Wants%20to%20Be%20a%20Millionaire%3F%20%2464%20000%20Question%20Music%20%28One-Hour%20Loop%29.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+// Automatically triggers the music on the user's very first interaction (like clicking Roll)
+document.addEventListener('click', function() {
+    const music = document.getElementById('bg-music');
+    if (music && music.paused) {
+        music.volume = 0.20; // 20% volume so it stays atmospheric in the background
+        music.play().catch(err => console.log("Audio waiting for active input..."));
+    }
+}, { once: true }); // '{ once: true }' ensures this listener cleans itself up after the first click
+</script>
 </body>
 </html>
