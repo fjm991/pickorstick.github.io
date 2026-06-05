@@ -323,7 +323,7 @@ function generateRoll() {
             // EDITED HERE: Changed player.rating to "??" to hide the rank until drafted
             html += `<button class="choice-btn" ${disabledAttr} onclick="draftPlayer('${player.name.replace(/'/g, "\\'")}', '${player.pos}', ${player.rating}, ${player.year}, '${player.team}')">
                         <strong>${player.name}</strong>
-                        <span>OVR: ?? <span class="pos-tag">${player.pos.toUpperCase()}</span></span>
+                        <span>Skill: Hidden <span class="pos-tag">${player.pos.toUpperCase()}</span></span>
                     </button>`;
         });
     }
